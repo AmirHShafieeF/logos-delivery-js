@@ -225,8 +225,16 @@ type Signature = {
 export function postCipher(
   message: Uint8Array
 ): { payload: Uint8Array; sig?: Signature } | undefined {
+  if (message.length === 0) {
+    return;
+  }
+
   const sizeOfPayloadSizeField = getSizeOfPayloadSizeField(message);
   if (sizeOfPayloadSizeField === 0) return;
+
+  if (message.length < 1 + sizeOfPayloadSizeField) {
+    return;
+  }
 
   const payloadSize = getPayloadSize(message, sizeOfPayloadSizeField);
   const payloadStart = 1 + sizeOfPayloadSizeField;
@@ -236,6 +244,9 @@ export function postCipher(
 
   let sig;
   if (isSigned) {
+    if (message.length < SignatureLength) {
+      return;
+    }
     const signature = getSignature(message);
     const hash = getHash(message, isSigned);
     const publicKey = ecRecoverPubKey(hash, signature);
